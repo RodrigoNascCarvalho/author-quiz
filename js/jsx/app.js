@@ -3,26 +3,43 @@
 
 	const Quiz = React.createClass({
 		getInitialState: function() {
-			return this.props.data.selectGame();
+			return _.extend({
+				bgClass: 'neutral',
+				showContinue: false,
+			}, this.props.data.selectGame());
 		},
 		propTypes: {
 			data: React.PropTypes.array.isRequired
 		},
+		handleBookSelected: function (title) {
+			let isCorrect = this.state.checkAnswer(title);
+			this.setState({
+				bgClass: isCorrect ? 'pass' : 'fail',
+				showContinue: isCorrect
+			});
+		},
+		handleContinue: function () {
+			this.setState(this.getInitialState()); 
+		},
 		render: function () {
 			return  <div>
 						<div className="row">
-							<div className="col-md-4">
+							<div className="col-md-2">
 								<img src={ this.state.author.imageUrl } className="authorimage col-md-3" />
 							</div>
 							<div className="col-md-7">
 								{this.state.books.map(function (b) {
-									return <Book key={b} title={b} />
+									return <Book onBookSelected={this.handleBookSelected} key={b} title={b} />
 								}, this)}
 							</div>
-							<div className="col-md-1">
-
-							</div>
+							<div className={"col-md-1 " + this.state.bgClass}></div>
 		 				</div>
+						{this.state.showContinue ? (
+							<div className="row">
+								<div className="col-md-12">
+									<input onClick={this.handleContinue} type="button" className="btn btn-default" value="Continue" />
+								</div>
+							</div>) : <span/>}				
 					</div>;
 		}
 	});
@@ -32,7 +49,14 @@
 			title: React.PropTypes.string.isRequired
 		},
 		render: function () {
-			return <div className="answer"><h4>{ this.props.title }</h4></div>;
+			return <div className="answer" onClick={this.handleClick}>
+						<h4>
+							{ this.props.title }
+						</h4>
+					</div>;
+		},
+		handleClick: function() {
+			this.props.onBookSelected(this.props.title);
 		}
 	});
 
@@ -88,7 +112,12 @@
     			return author.books.some(function(title) {
     				return title === answer;
     			})
-    		} )
+    		}),
+    		checkAnswer: function(title) {
+    			return this.author.books.some(function (t) {
+		    		return t === title;
+		    	});
+    		}
     	}
     };
 
