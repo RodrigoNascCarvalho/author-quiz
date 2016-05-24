@@ -10,7 +10,7 @@
 			return _.extend({
 				bgClass: 'neutral',
 				showContinue: false
-			}, this.props.data.selectGame());
+			}, this.props.data.selectGame(this.props.configuredAnswer));
 		},
 		propTypes: {
 			data: React.PropTypes.array.isRequired
@@ -21,6 +21,9 @@
 				bgClass: isCorrect ? 'pass' : 'fail',
 				showContinue: isCorrect
 			});
+		},
+		handleAddGame: function handleAddGame() {
+			routie('add');
 		},
 		handleContinue: function handleContinue() {
 			this.setState(this.getInitialState());
@@ -54,7 +57,16 @@
 						{ className: 'col-md-12' },
 						React.createElement('input', { onClick: this.handleContinue, type: 'button', className: 'btn btn-default', value: 'Continue' })
 					)
-				) : React.createElement('span', null)
+				) : React.createElement('span', null),
+				React.createElement(
+					'div',
+					{ className: 'row' },
+					React.createElement(
+						'div',
+						{ className: 'col-md-12' },
+						React.createElement('input', { onClick: this.handleAddGame, id: 'addGameButton', type: 'button', value: 'Add Game', className: 'btn' })
+					)
+				)
 			);
 		}
 	});
@@ -78,6 +90,72 @@
 		},
 		handleClick: function handleClick() {
 			this.props.onBookSelected(this.props.title);
+		}
+	});
+
+	var AddGameForm = React.createClass({
+		displayName: 'AddGameForm',
+
+		propTypes: {
+			onGameFormSubmitted: React.PropTypes.func.isRequired
+		},
+		handleSubmit: function handleSubmit() {
+			this.props.onGameFormSubmitted(getRefs(this));
+			return false;
+		},
+		render: function render() {
+			return React.createElement(
+				'div',
+				{ className: 'row' },
+				React.createElement(
+					'div',
+					{ className: 'col-md-offset-2 col-md-6' },
+					React.createElement(
+						'h1',
+						null,
+						'Add Game'
+					),
+					React.createElement(
+						'form',
+						{ role: 'form', onSubmit: this.handleSubmit },
+						React.createElement(
+							'div',
+							{ className: 'form-group' },
+							React.createElement('input', { ref: 'imageUrl', type: 'text', className: 'form-control', placeholder: 'Image Url' })
+						),
+						React.createElement(
+							'div',
+							{ className: 'form-group' },
+							React.createElement('input', { ref: 'answer1', type: 'text', className: 'form-control', placeholder: 'Answer 1' })
+						),
+						React.createElement(
+							'div',
+							{ className: 'form-group' },
+							React.createElement('input', { ref: 'answer2', type: 'text', className: 'form-control', placeholder: 'Answer 2' })
+						),
+						React.createElement(
+							'div',
+							{ className: 'form-group' },
+							React.createElement('input', { ref: 'answer3', type: 'text', className: 'form-control', placeholder: 'Answer 3' })
+						),
+						React.createElement(
+							'div',
+							{ className: 'form-group' },
+							React.createElement('input', { ref: 'answer4', type: 'text', className: 'form-control', placeholder: 'Answer 4' })
+						),
+						React.createElement(
+							'div',
+							{ className: 'form-group' },
+							React.createElement('input', { ref: 'correctAnswer', type: 'text', className: 'form-control', placeholder: 'Correct Answer' })
+						),
+						React.createElement(
+							'button',
+							{ type: 'submit', className: 'btn' },
+							'Submit'
+						)
+					)
+				)
+			);
 		}
 	});
 
@@ -113,12 +191,12 @@
 		books: ['Hamlet', 'Macbeth', 'Romeo and Juliet']
 	}];
 
-	data.selectGame = function () {
+	var selectGame = function selectGame(configuredAnswer) {
 		var books = _.shuffle(this.reduce(function (p, c, i) {
 			return p.concat(c.books);
 		}, [])).slice(0, 4);
 
-		var answer = books[_.random(books.length - 1)];
+		var answer = configuredAnswer ? configuredAnswer : books[_.random(books.length - 1)];
 
 		return {
 			books: books,
@@ -135,5 +213,42 @@
 		};
 	};
 
-	ReactDOM.render(React.createElement(Quiz, { data: data }), document.getElementById('app'));
+	data.selectGame = selectGame;
+
+	function handleAddGameFormSubmitted(data) {
+		var quizData = [{
+			imageUrl: data.imageUrl,
+			books: [data.answer1]
+		}, {
+			imageUrl: data.imageUrl,
+			books: [data.answer2]
+		}, {
+			imageUrl: data.imageUrl,
+			books: [data.answer3]
+		}, {
+			imageUrl: data.imageUrl,
+			books: [data.answer4]
+		}];
+
+		quizData.selectGame = selectGame;
+
+		ReactDOM.render(React.createElement(Quiz, { data: quizData, configuredAnswer: data.correctAnswer }), document.getElementById('app'));
+	}
+
+	function getRefs(component) {
+		var result = {};
+		Object.keys(component.refs).forEach(function (refName) {
+			result[refName] = ReactDOM.findDOMNode(component.refs[refName]).value;
+		});
+		return result;
+	}
+
+	routie({
+		'': function _() {
+			ReactDOM.render(React.createElement(Quiz, { data: data }), document.getElementById('app'));
+		},
+		'add': function add() {
+			ReactDOM.render(React.createElement(AddGameForm, { onGameFormSubmitted: handleAddGameFormSubmitted }), document.getElementById('app'));
+		}
+	});
 })();

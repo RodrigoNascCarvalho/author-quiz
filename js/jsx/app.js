@@ -6,7 +6,7 @@
 			return _.extend({
 				bgClass: 'neutral',
 				showContinue: false,
-			}, this.props.data.selectGame());
+			}, this.props.data.selectGame(this.props.configuredAnswer));
 		},
 		propTypes: {
 			data: React.PropTypes.array.isRequired
@@ -17,6 +17,9 @@
 				bgClass: isCorrect ? 'pass' : 'fail',
 				showContinue: isCorrect
 			});
+		},
+		handleAddGame: function() {
+			routie('add');
 		},
 		handleContinue: function () {
 			this.setState(this.getInitialState()); 
@@ -39,7 +42,12 @@
 								<div className="col-md-12">
 									<input onClick={this.handleContinue} type="button" className="btn btn-default" value="Continue" />
 								</div>
-							</div>) : <span/>}				
+							</div>) : <span/>}		
+						<div className="row">
+							<div className="col-md-12">
+								<input onClick={this.handleAddGame} id="addGameButton" type="button" value="Add Game" className="btn"/>
+							</div>
+						</div>		
 					</div>;
 		}
 	});
@@ -57,6 +65,44 @@
 		},
 		handleClick: function() {
 			this.props.onBookSelected(this.props.title);
+		}
+	});
+
+	let AddGameForm = React.createClass({
+		propTypes: {
+			onGameFormSubmitted: React.PropTypes.func.isRequired
+		},
+		handleSubmit: function() {
+			this.props.onGameFormSubmitted(getRefs(this));
+			return false;
+		},
+		render: function() {
+			return <div className="row">
+						<div className="col-md-offset-2 col-md-6">
+							<h1>Add Game</h1>
+							<form role="form" onSubmit={this.handleSubmit}>
+								<div className="form-group">
+									<input ref="imageUrl" type="text" className="form-control" placeholder="Image Url"/>
+ 								</div>
+								<div className="form-group">
+									<input ref="answer1" type="text" className="form-control" placeholder="Answer 1"/>
+ 								</div>
+								<div className="form-group">
+									<input ref="answer2" type="text" className="form-control" placeholder="Answer 2"/>
+ 								</div>
+ 								<div className="form-group">
+									<input ref="answer3" type="text" className="form-control" placeholder="Answer 3"/>
+ 								</div>
+								<div className="form-group">
+									<input ref="answer4" type="text" className="form-control" placeholder="Answer 4"/>
+ 								</div>
+ 								<div className="form-group">
+ 									<input ref="correctAnswer" type="text" className="form-control" placeholder="Correct Answer"/>
+ 								</div>
+ 								<button type="submit" className="btn">Submit</button>
+							</form>
+						</div>
+					</div>;	
 		}
 	});
 
@@ -99,12 +145,12 @@
         }
     ];
 
-    data.selectGame = function() {
+    let selectGame = function(configuredAnswer) {
     	var books = _.shuffle(this.reduce(function (p, c, i) {
     		return p.concat(c.books);
     	}, [])).slice(0, 4);
 
-    	let answer = books[_.random(books.length-1)];
+    	let answer = configuredAnswer ? configuredAnswer : books[_.random(books.length-1)];
 
     	return {
     		books: books,
@@ -121,6 +167,49 @@
     	}
     };
 
-	ReactDOM.render(<Quiz data={ data }/>,
-	 				document.getElementById('app'));
+    data.selectGame = selectGame;
+
+    function handleAddGameFormSubmitted(data) {
+    	var quizData = [{
+	    		imageUrl: data.imageUrl,
+	    		books: [data.answer1]
+    		},
+    		{
+	    		imageUrl: data.imageUrl,
+	    		books: [data.answer2]
+    		},
+    		{
+	    		imageUrl: data.imageUrl,
+	    		books: [data.answer3]
+    		},
+    		{
+	    		imageUrl: data.imageUrl,
+	    		books: [data.answer4]
+    		}];
+
+    	quizData.selectGame = selectGame;
+
+    	ReactDOM.render(<Quiz data={quizData} configuredAnswer={data.correctAnswer}/>,
+    				document.getElementById('app'));
+    }
+
+    function getRefs(component) {
+    	let result = {};
+    	Object.keys(component.refs).forEach(function(refName) {
+    		result[refName] = ReactDOM.findDOMNode(component.refs[refName]).value;
+    	});
+    	return result;
+    }
+
+    routie({
+    	'': function() {
+			ReactDOM.render(<Quiz data={ data }/>,
+			 				document.getElementById('app'));    		
+    	},
+    	'add': function() {
+    		ReactDOM.render(<AddGameForm onGameFormSubmitted={handleAddGameFormSubmitted}/>, 
+    						document.getElementById('app'));
+    	}
+    });
+
 }());
